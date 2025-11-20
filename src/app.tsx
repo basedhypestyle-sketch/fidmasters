@@ -1,136 +1,119 @@
+// src/app.tsx
 import React, { useEffect, useState } from "react";
-import { ethers } from "ethers";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
 
-// declare window WalletConnectProvider for UMD usage
-declare global {
-  interface Window {
-    WalletConnectProvider?: any;
+export default function App() {
+  const { address, isConnected } = useAccount();
+  const { connect, connectors, isLoading: connecting } = useConnect();
+  const { disconnect } = useDisconnect();
+
+  const [status, setStatus] = useState<string>("Not connected");
+  const [joining, setJoining] = useState(false);
+
+  // Auto-join when connected
+  useEffect(() => {
+    if (isConnected && address) {
+      setStatus(`Connected: ${short(address)}`);
+      // auto-join once per session / mount
+      (async () => {
+        await joinWaitlist(address, setStatus, setJoining);
+      })();
+    } else {
+      setStatus("Not connected");
+    }
+  }, [isConnected, address]);
+
+  return (
+    <div className="page">
+      <div className="logo" />
+      <h2>Fid Master</h2>
+      <p className="sub">Secure your Master — join waitlist</p>
+
+      <div className="btns">
+        {/* Connect using first available connector (Injected) */}
+        <button
+          onClick={() => {
+            const injected = connectors.find((c) => c.id === "injected");
+            if (injected) connect({ connector: injected });
+            else connect();
+          }}
+        >
+          Connect Wallet
+        </button>
+
+        {/* If you added a WalletConnect connector to wagmi.ts, this will show as an available connector */}
+        {connectors
+          .filter((c) => c.id !== "injected")
+          .map((c) => (
+            <button key={c.id} onClick={() => connect({ connector: c })}>
+              {c.name}
+            </button>
+          ))}
+
+        <button onClick={() => disconnect()}>Disconnect</button>
+
+        <a className="btn" href="https://opensea.io/collection/fidmaster/overview" target="_blank" rel="noreferrer">
+          OpenSea
+        </a>
+
+        <button className="primary" onClick={() => joinWaitlist(address, setStatus, setJoining)} disabled={joining}>
+          {joining ? "Joining..." : "Join Waitlist"}
+        </button>
+      </div>
+
+      <div id="status" className="status">
+        {status}
+      </div>
+
+      <div style={{ marginTop: 8 }}>
+        <button
+          onClick={() => {
+            const text = encodeURIComponent(`I joined the Fid Master waitlist! ${address || ""}`);
+            window.open(`https://warpcast.com/compose?text=${text}`, "_blank");
+          }}
+        >
+          Share on Farcaster
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* helpers */
+async function joinWaitlist(
+  address: string | undefined,
+  setStatus: (s: string) => void,
+  setJoining: (b: boolean) => void
+) {
+  setJoining(true);
+  try {
+    setStatus("Joining waitlist...");
+    // try server
+    const res = await fetch("/api/waitlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address }),
+    });
+    if (res.ok) {
+      const j = await res.json();
+      setStatus(`Joined (server) ✔ ${short(address)}`);
+      setJoining(false);
+      return j;
+    } else {
+      throw new Error("server error " + res.status);
+    }
+  } catch (e) {
+    // fallback local
+    const list = JSON.parse(localStorage.getItem("fid_waitlist") || "[]");
+    list.push({ address: address || null, ts: new Date().toISOString() });
+    localStorage.setItem("fid_waitlist", JSON.stringify(list));
+    setStatus(`Joined (local) ✔ ${short(address)}`);
+    setJoining(false);
+    return { local: true };
   }
 }
 
-interface WalletState {
-  address: string | null;
-  short: string | null;
-  connected: boolean;
-}
-
-export default function App() {
-  const [wallet, setWallet] = useState<WalletState>({
-    address: null,
-    short: null,
-    connected: false,
-  });
-
-  const [provider, setProvider] = useState<any>(null);
-  const [signer, setSigner] = useState<any>(null);
-  const [msg, setMsg] = useState("I claimed an early whitelist spot for Fid Master!");
-  const [frameOpen, setFrameOpen] = useState(false);
-
-  const shorten = (a: string) => `${a.slice(0, 6)}...${a.slice(-4)}`;
-
-  const connectMetaMask = async () => {
-    if (!(window as any).ethereum) {
-      alert("MetaMask not found");
-      return;
-    }
-    await (window as any).ethereum.request({ method: "eth_requestAccounts" });
-    const prov = new ethers.providers.Web3Provider((window as any).ethereum);
-    const sign = prov.getSigner();
-    const addr = await sign.getAddress();
-
-    setProvider(prov);
-    setSigner(sign);
-
-    setWallet({ address: addr, short: shorten(addr), connected: true });
-  };
-
-  const connectWalletConnect = async () => {
-    if (!window.WalletConnectProvider) {
-      alert("WalletConnect not loaded yet");
-      return;
-    }
-    const wc = new window.WalletConnectProvider.default({
-      rpc: { 1: "https://rpc.ankr.com/eth" },
-      qrcode: true,
-    });
-    await wc.enable();
-
-    const prov = new ethers.providers.Web3Provider(wc);
-    const sign = prov.getSigner();
-    const addr = await sign.getAddress();
-
-    setProvider(prov);
-    setSigner(sign);
-
-    setWallet({ address: addr, short: shorten(addr), connected: true });
-
-    try { wc.on("disconnect", () => { disconnect(); }); } catch (e) {}
-  };
-
-  const disconnect = () => {
-    setWallet({ address: null, short: null, connected: false });
-    setProvider(null);
-    setSigner(null);
-    setFrameOpen(false);
-  };
-
-  const copyAddress = () => {
-    if (wallet.address) navigator.clipboard.writeText(wallet.address);
-  };
-
-  const shareFarcaster = () => {
-    const text = encodeURIComponent(`${msg} Wallet: ${wallet.address}`);
-    window.open(`https://warpcast.com/compose?text=${text}`, "_blank");
-  };
-
-  const toggleFrame = () => setFrameOpen(s => !s);
-
-  return (
-    <div style={{ padding: 30, maxWidth: 760, margin: '0 auto', color: '#fff', fontFamily: 'Inter, sans-serif' }}>
-      <header style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <img src="https://fid-master.vercel.app/icon.png" width={64} height={64} style={{ borderRadius: 14 }} />
-        <div>
-          <h1 style={{ margin: 0 }}>Fid Master</h1>
-          <p style={{ margin: 0, opacity: 0.7 }}>Secure your Master — claim whitelist</p>
-        </div>
-      </header>
-
-      {!wallet.connected ? (
-        <div style={{ marginTop: 20, display: 'flex', gap: 10 }}>
-          <button onClick={connectMetaMask} className="btn">Connect MetaMask</button>
-          <button onClick={connectWalletConnect} className="btn">WalletConnect</button>
-          <a href="https://opensea.io/collection/fidmaster/overview" target="_blank" rel="noreferrer"><button className="btn">OpenSea</button></a>
-        </div>
-      ) : (
-        <div style={{ marginTop: 20, padding: 16, background: 'rgba(255,255,255,0.06)', borderRadius: 12 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-            <div>
-              <div style={{ fontSize: 12, opacity: 0.7 }}>Connected Wallet</div>
-              <div style={{ padding: '6px 10px', background: 'rgba(0,0,0,0.3)', borderRadius: 8, fontFamily: 'monospace' }}>{wallet.short}</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ color: '#4ade80', fontWeight: 600, marginBottom: 4 }}>✓ You're on the whitelist!</div>
-              <button onClick={copyAddress}>Copy</button>
-            </div>
-          </div>
-
-          <button onClick={shareFarcaster} style={{ marginRight: 8 }} className="btn primary">Share on Farcaster</button>
-          <button onClick={toggleFrame} className="btn">{frameOpen ? 'Close Frame' : 'Open Frame'}</button>
-
-          <div style={{ marginTop: 14 }}>
-            <label style={{ fontSize: 12, opacity: 0.7 }}>Message</label>
-            <input value={msg} onChange={(e) => setMsg(e.target.value)} style={{ width: '100%', padding: 10, borderRadius: 10, marginTop: 6 }} />
-          </div>
-
-          {frameOpen && (
-            <div style={{ overflow: 'hidden', borderRadius: 12, marginTop: 14, border: '1px solid rgba(255,255,255,0.1)' }}>
-              <iframe src={`https://warpcast.com/compose?text=${encodeURIComponent(msg + ' Wallet: ' + wallet.address)}`} width="100%" height={450} style={{ border: 'none' }}></iframe>
-            </div>
-          )}
-
-          <button onClick={disconnect} style={{ marginTop: 20, background: '#ff4757' }} className="btn">Disconnect</button>
-        </div>
-      )}
-    </div>
-  );
+function short(a?: string) {
+  if (!a) return "—";
+  return `${a.slice(0, 6)}…${a.slice(-4)}`;
 }
