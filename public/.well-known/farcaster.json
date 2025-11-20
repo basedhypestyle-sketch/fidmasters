@@ -1,0 +1,18 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjM0NjA3NSwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDEwQjUzYTlGNDFBNzhlNENDQ0FhZUEyQzUxZGZiNUY2RmYwMjIzMTgifQ",
+    "payload": "eyJkb21haW4iOiJmaWRtYXN0ZXJzLnZlcmNlbC5hcHAifQ",
+    "signature": "lyV0/NAlnj06wc+qs64MnFtBtoJ0NSnfqWH3J8foB+BfPS9LwNTA5ZwIoFlE+qIZRD3WjLc9sx/ucqr8b0P9Hxs="
+  },
+  "frame": {
+    "version": "1",
+    "name": "Fid Master",
+    "iconUrl": "https://fidmasters.vercel.app/icon.png",
+    "homeUrl": "https://fidmasters.vercel.app",
+    "imageUrl": "https://fidmasters.vercel.app/image.png",
+    "buttonTitle": "Check this out",
+    "splashImageUrl": "https://fidmasters.vercel.app/splash.png",
+    "splashBackgroundColor": "#eeccff",
+    "webhookUrl": "https://fidmasters.vercel.app/api/webhook"
+  }
+}
