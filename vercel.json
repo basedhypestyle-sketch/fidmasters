@@ -1,0 +1,23 @@
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors https://warpcast.com https://*.warpcast.com https://fidmasters.vercel.app 'self';"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/.well-known/farcaster.json",
+      "destination": "/public/.well-known/farcaster.json"
+    }
+  ]
+}
