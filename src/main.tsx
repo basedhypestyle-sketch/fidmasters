@@ -1,11 +1,16 @@
-import React from 'react'
-import { createRoot } from 'react-dom/client'
-import App from './app'
+// src/main.tsx
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { WagmiConfig } from "wagmi";
+import { wagmiClient } from "./wagmi";
+import App from "./app";
+import "./index.css";
 
-import './styles.css'
-
-createRoot(document.getElementById('root')!).render(
+const root = createRoot(document.getElementById("root")!);
+root.render(
   <React.StrictMode>
-    <App />
+    <WagmiConfig client={wagmiClient}>
+      <App />
+    </WagmiConfig>
   </React.StrictMode>
-)
+);
