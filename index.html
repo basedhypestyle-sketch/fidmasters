@@ -1,17 +1,32 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Fid Master</title>
-  <link rel="icon" href="https://fidmasters.vercel.app/icon.png" />
-  <meta property="og:image" content="https://fidmasters.vercel.app/splash.png" />
-  <meta name="theme-color" content="#0a0f24" />
-  <meta name="fc:frame" content='{"version":"next","imageUrl":"https://fidmasters.vercel.app/splash.png","buttons":[{"title":"Open Fid Master","action":{"type":"launch_frame","name":"Fid Master","url":"https://fidmasters.vercel.app/"}}]}'/>
-  <meta name="fc:miniapp" content='{"version":"next","imageUrl":"https://fidmasters.vercel.app/splash.png","button":{"title":"Open Fid Master","action":{"type":"launch_miniapp","url":"https://fidmasters.vercel.app/","name":"Fid Master","splashImageUrl":"https://fidmasters.vercel.app/splash.png","splashBackgroundColor":"#0a0f24"}}}'/>
-</head>
-<body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta
+      name="fc:miniapp"
+      content='{
+        "version": "next",
+        "imageUrl": "/splash.png",
+        "button": {
+          "title": "Fid Master",
+          "action": {
+            "type": "launch_miniapp",
+            "url": "https://fidmasters.vercel.app/",
+            "name": "Fid Master",
+            "splashImageUrl": "/splash.png",
+            "splashBackgroundColor": "#071026"
+          }
+        }
+      }'
+    />
+
+    <title>Fid Master</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
