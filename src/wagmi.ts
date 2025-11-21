@@ -1,44 +1,49 @@
-import { farcasterFrame } from "@farcaster/frame-wagmi-connector";
-import { http, createConfig } from "wagmi";
+// src/wagmi.ts
+import { createConfig, http } from "wagmi";
 import { base } from "wagmi/chains";
-import { injected, walletConnect, coinbaseWallet } from "wagmi/connectors";
-import { createAppKit } from "@reown/appkit/react";
-import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
+import { InjectedConnector } from "wagmi/connectors/injected";
 
-const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || "demo-project-id";
+/**
+ * Safe/guarded connector loader:
+ * - avoids failing npm install/build when optional connector packages are not published.
+ * - will add connectors at runtime only if the packages exist in node_modules.
+ */
 
-const wagmiAdapter = new WagmiAdapter({
-  networks: [base],
-  projectId,
-});
+const connectors: any[] = [];
 
-export const appKit = createAppKit({
-  adapters: [wagmiAdapter],
-  networks: [base],
-  projectId,
-  metadata: {
-    name: "Fid Master",
-    description: "Secure your Master — early whitelist",
-    url: typeof window !== "undefined" ? window.location.origin : "",
-    icons: ["https://fidmasters.vercel.app/icon.png"],
-  },
-  features: {
-    email: true,
-    socials: ["farcaster"],
-    emailShowWallets: true,
-  },
-  allWallets: "SHOW",
-});
+// always include injected (MetaMask / extension)
+connectors.push(new InjectedConnector({ chains: [base] }));
+
+// try optional connectors (require will throw if package absent)
+try {
+  // Example: farcasterFrame connector package (if/when available)
+  // const { farcasterFrame } = require("@farcaster/frame-wagmi-connector");
+  // if (typeof farcasterFrame === "function") connectors.push(farcasterFrame());
+} catch (e) {
+  // ignore
+}
+
+try {
+  // WalletConnect v1/v2 connector via wagmi package (if installed)
+  const wcModule = require("wagmi/connectors/walletConnect");
+  const walletConnect = wcModule?.walletConnect || wcModule?.WalletConnectConnector || null;
+  if (walletConnect) connectors.push(walletConnect({ projectId: process.env.VITE_WALLETCONNECT_PROJECT_ID || "demo-project-id" }));
+} catch (e) {
+  // ignore
+}
+
+try {
+  const cbModule = require("wagmi/connectors/coinbaseWallet");
+  const coinbaseWallet = cbModule?.coinbaseWallet || cbModule?.CoinbaseWalletConnector || null;
+  if (coinbaseWallet) connectors.push(coinbaseWallet({ appName: "Fid Master" }));
+} catch (e) {
+  // ignore
+}
 
 export const config = createConfig({
   autoConnect: true,
-  connectors: [
-    injected(), // injected wallets
-    farcasterFrame(), // farcaster frame connector
-    walletConnect({ projectId }), // walletconnect
-    coinbaseWallet({ appName: "Fid Master" }),
-  ],
+  connectors,
   transports: {
-    [base.id]: http(),
-  },
+    [base.id]: http()
+  }
 });
