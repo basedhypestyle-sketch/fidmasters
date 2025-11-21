@@ -5,7 +5,7 @@ import useFarcasterContext from './hooks/useFarcasterContext'
 export default function App(){ 
   const { address, isConnected } = useAccount()
   const { connect, connectors } = useConnect()
-  const { disconnect } = useDisconnect ? useDisconnect() : { disconnect: () => {} }
+  const { disconnect } = useDisconnect()
   const farcaster = useFarcasterContext()
 
   return (
