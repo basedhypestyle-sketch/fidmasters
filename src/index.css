@@ -1,3 +1,20 @@
-:root{--bg:#071026;--card:rgba(255,255,255,0.04);--accent:#7c3aed}
-body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Arial}
-button{padding:8px 12px;border-radius:8px;border:0;background:#1f2937;color:#fff;cursor:pointer}
+:root {
+  --bg: #071026;
+  --card: rgba(255, 255, 255, 0.04);
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: #fff;
+  font-family: Inter, system-ui, Arial;
+}
+
+button {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 0;
+  background: #1f2937;
+  color: #fff;
+  cursor: pointer;
+}
